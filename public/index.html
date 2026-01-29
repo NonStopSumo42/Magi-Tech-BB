@@ -1,58 +1,156 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>MAGITECH BB</title>
+
 <style>
-body{background:#0b1f14;color:#3aff7a;font-family:monospace}
-.green{color:#3aff7a}.blue{color:#2fd0ff}.orange{color:#ff9a2f}
+@font-face {
+  font-family: "VT323";
+  src: local("VT323"), monospace;
+}
+
+body {
+  margin: 0;
+  background: #06140f;
+  color: #3aff7a;
+  font-family: "VT323", monospace;
+  font-size: 18px;
+  text-shadow: 0 0 6px rgba(58,255,122,0.6);
+}
+
+/* CRT overlay */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.15) 0px,
+      rgba(0,0,0,0.15) 1px,
+      transparent 2px,
+      transparent 4px
+    );
+}
+
+.frame {
+  border: 2px solid #3aff7a;
+  margin: 20px;
+  padding: 15px;
+}
+
+h1 {
+  margin-top: 0;
+  letter-spacing: 2px;
+}
+
+.post {
+  border-bottom: 1px dashed #1f5;
+  padding: 6px 0;
+}
+
+.green { color: #3aff7a; }
+.blue { color: #2fd0ff; text-shadow:0 0 6px rgba(47,208,255,.8);}
+.orange { color: #ff9a2f; text-shadow:0 0 6px rgba(255,154,47,.8);}
+.red { color: #ff4d4d; }
+
+input, textarea, button {
+  width: 100%;
+  background: #020a07;
+  color: #3aff7a;
+  border: 2px solid #3aff7a;
+  font-family: inherit;
+  font-size: 16px;
+  padding: 6px;
+  margin-top: 6px;
+}
+
+button:hover {
+  background: #0f3326;
+}
+
+.nav {
+  margin-top: 10px;
+}
+.nav a {
+  color: #3aff7a;
+  margin-right: 15px;
+  text-decoration: none;
+}
 </style>
 </head>
+
 <body>
 
-<h1>MAGITECH BB</h1>
-<div id="forum"></div>
+<div class="frame">
+  <h1>MAGITECH BULLETIN BOARD</h1>
 
-<textarea id="anon"></textarea><br>
-<button onclick="postAnon()">Post Anon</button>
+  <div id="forum"></div>
+</div>
 
-<hr>
+<div class="frame">
+  <h2>POST AS MEMBER_UNKNOWN</h2>
+  <textarea id="anonText" rows="3"></textarea>
+  <button onclick="postAnon()">TRANSMIT</button>
+</div>
 
-<input id="u" placeholder="user">
-<input id="p" type="password" placeholder="pass">
-<button onclick="login()">Login</button>
+<div class="frame">
+  <h2>AUTHORIZED LOGIN</h2>
+  <input id="user" placeholder="USERNAME">
+  <input id="pass" type="password" placeholder="PASSWORD">
+  <button onclick="login()">ACCESS TERMINAL</button>
+</div>
 
-<p>
-<a href="inbox.html">📨 Inbox</a> |
-<a href="logs.html">📜 Logs</a> |
-<a href="admin.html">⚠ Admin</a>
-</p>
+<div class="frame nav">
+  <a href="inbox.html">[📨 MAIL]</a>
+  <a href="logs.html">[📜 LOGS]</a>
+  <a href="admin.html">[⚠ ADMIN]</a>
+</div>
 
 <script>
-function load(){
-  fetch("/forum").then(r=>r.json()).then(d=>{
-    forum.innerHTML="";
-    d.forEach(p=>{
-      forum.innerHTML+=`<div class="${p.color}">[${p.author}] ${p.text}</div>`;
+function loadForum() {
+  fetch("/forum")
+    .then(r => r.json())
+    .then(data => {
+      forum.innerHTML = "";
+      data.forEach(p => {
+        const d = document.createElement("div");
+        d.className = "post " + p.color;
+        d.textContent = `[${p.author}] ${p.text}`;
+        forum.appendChild(d);
+      });
     });
+}
+
+function postAnon() {
+  fetch("/forum/anon", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: anonText.value })
+  }).then(() => {
+    anonText.value = "";
+    loadForum();
   });
 }
 
-function postAnon(){
-  fetch("/forum/anon",{method:"POST",headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({text:anon.value})}).then(load);
-  anon.value="";
-}
-
-function login(){
-  fetch("/login",{method:"POST",headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({username:u.value,password:p.value})})
-  .then(r=>r.json()).then(d=>{
-    if(d.error) alert(d.error);
-    else localStorage.setItem("session",JSON.stringify(d));
+function login() {
+  fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: user.value, password: pass.value })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.error) return alert(d.error);
+    localStorage.setItem("session", JSON.stringify(d));
+    alert("ACCESS GRANTED");
   });
 }
 
-load();
+loadForum();
 </script>
+
 </body>
 </html>
