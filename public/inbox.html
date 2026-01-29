@@ -2,7 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>MAGITECH MAIL</title>
+<title>MAIL TERMINAL</title>
+
 <style>
 body {
   background:#020a07;
@@ -10,19 +11,29 @@ body {
   font-family:monospace;
   text-shadow:0 0 5px rgba(58,255,122,.7);
 }
-.frame { border:2px solid #3aff7a; padding:12px; margin:12px; }
-.msg { border-bottom:1px dashed #1f5; padding:6px 0; }
-.blue{color:#2fd0ff} .orange{color:#ff9a2f}
+.frame {
+  border:2px solid #3aff7a;
+  padding:12px;
+  margin:12px;
+}
+.msg {
+  border-bottom:1px dashed #1f5;
+  padding:6px 0;
+}
 input, textarea, button {
-  width:100%; background:black; color:#3aff7a;
-  border:2px solid #3aff7a; margin-top:6px;
+  width:100%;
+  background:black;
+  color:#3aff7a;
+  border:2px solid #3aff7a;
+  margin-top:6px;
 }
 </style>
 </head>
+
 <body>
 
 <div class="frame">
-  <h2>PRIVATE MAIL TERMINAL</h2>
+  <h2>PRIVATE MAIL</h2>
   <div id="msgs"></div>
 </div>
 
@@ -35,20 +46,26 @@ input, textarea, button {
 </div>
 
 <script>
-const s = JSON.parse(localStorage.getItem("session"));
+const session = JSON.parse(localStorage.getItem("session"));
+if (!session) {
+  location = "/";
+}
 
 function load() {
-  fetch("/inbox").then(r=>r.json()).then(data=>{
-    msgs.innerHTML="";
-    data.forEach(m=>{
-      msgs.innerHTML+=
-        `<div class="msg ${m.color}">
-          <b>${m.from}</b> → ${m.to}<br>
-          <i>${m.subject}</i><br>
-          ${m.body}
-        </div>`;
+  fetch("/inbox")
+    .then(r=>r.json())
+    .then(data=>{
+      msgs.innerHTML="";
+      data.forEach(m=>{
+        msgs.innerHTML += `
+          <div class="msg">
+            FROM: ${m.from}<br>
+            TO: ${m.to}<br>
+            SUBJECT: ${m.subject}<br>
+            ${m.body}
+          </div>`;
+      });
     });
-  });
 }
 
 function send() {
@@ -56,11 +73,10 @@ function send() {
     method:"POST",
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      from: s.publicName || s.username,
+      from: session.publicName || session.username,
       to: to.value,
       subject: subject.value,
-      body: body.value,
-      color: s.color
+      body: body.value
     })
   }).then(()=>{ body.value=""; load(); });
 }
