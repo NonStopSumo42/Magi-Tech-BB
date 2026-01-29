@@ -1,30 +1,20 @@
 {
   "forum": [
     {
-      "name": "member_unknown",
-      "text": "haha",
-      "color": "#2fa36b"
+
     },
     {
-      "name": "B",
-      "text": "haha",
-      "color": "#00ffff"
+
     }
   ],
   "mail": [
     {
-      "from": "B",
-      "to": "Pr0j3ctA",
-      "text": "haha",
-      "color": "#00ffff"
+
     }
   ],
   "logs": [
     {
-      "title": "Test",
-      "author": "Toastye",
-      "text": "Hello World",
-      "color": "#00ffff"
+
     }
   ]
 }
