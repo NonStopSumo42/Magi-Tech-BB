@@ -4,44 +4,33 @@ const path = require("path");
 
 const app = express();
 app.use(express.json());
+app.use(express.static("public")); // 🔴 THIS FIXES Cannot GET /
 
-/* =========================
-   FILE PATHS
-========================= */
+/* =====================
+   DATA FILES
+===================== */
 
 const DATA_DIR = path.join(__dirname, "data");
 const FORUM_FILE = path.join(DATA_DIR, "forum.json");
 const INBOX_FILE = path.join(DATA_DIR, "inbox.json");
 const LOGS_FILE = path.join(DATA_DIR, "logs.json");
 
-/* =========================
-   ENSURE FILES EXIST
-========================= */
-
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-
-for (const file of [FORUM_FILE, INBOX_FILE, LOGS_FILE]) {
-  if (!fs.existsSync(file)) fs.writeFileSync(file, "[]");
+for (const f of [FORUM_FILE, INBOX_FILE, LOGS_FILE]) {
+  if (!fs.existsSync(f)) fs.writeFileSync(f, "[]");
 }
 
-/* =========================
-   LOAD DATA
-========================= */
-
-let forumPosts = JSON.parse(fs.readFileSync(FORUM_FILE));
-let inboxMessages = JSON.parse(fs.readFileSync(INBOX_FILE));
+let forum = JSON.parse(fs.readFileSync(FORUM_FILE));
+let inbox = JSON.parse(fs.readFileSync(INBOX_FILE));
 let logs = JSON.parse(fs.readFileSync(LOGS_FILE));
 
-const saveForum = () =>
-  fs.writeFileSync(FORUM_FILE, JSON.stringify(forumPosts, null, 2));
-const saveInbox = () =>
-  fs.writeFileSync(INBOX_FILE, JSON.stringify(inboxMessages, null, 2));
-const saveLogs = () =>
-  fs.writeFileSync(LOGS_FILE, JSON.stringify(logs, null, 2));
+const saveForum = () => fs.writeFileSync(FORUM_FILE, JSON.stringify(forum, null, 2));
+const saveInbox = () => fs.writeFileSync(INBOX_FILE, JSON.stringify(inbox, null, 2));
+const saveLogs = () => fs.writeFileSync(LOGS_FILE, JSON.stringify(logs, null, 2));
 
-/* =========================
-   USERS (THIS FIXES LOGIN)
-========================= */
+/* =====================
+   USERS
+===================== */
 
 const USERS = {
   Pr0j3ctB: {
@@ -70,160 +59,110 @@ const USERS = {
   }
 };
 
-/* =========================
+/* =====================
    LOGIN
-========================= */
+===================== */
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-
   const user = USERS[username];
   if (!user || user.password !== password) {
     return res.status(401).json({ error: "Invalid credentials" });
   }
-
-  res.json({
-    username,
-    role: user.role,
-    color: user.color,
-    publicName: user.publicName || null,
-    publicNames: user.publicNames || null
-  });
+  res.json(user);
 });
 
-/* =========================
+/* =====================
    FORUM
-========================= */
+===================== */
 
-app.get("/forum", (req, res) => {
-  res.json(forumPosts);
-});
+app.get("/forum", (req, res) => res.json(forum));
 
 app.post("/forum/anon", (req, res) => {
-  const { text } = req.body;
-  if (!text) return res.status(400).json({ error: "Empty post" });
-
-  forumPosts.push({
+  forum.push({
     id: Date.now(),
     author: "member_unknown",
     color: "green",
-    text,
-    timestamp: new Date().toISOString()
+    text: req.body.text
   });
-
   saveForum();
-  res.json({ success: true });
+  res.json({ ok: true });
 });
 
 app.post("/forum/auth", (req, res) => {
-  const { author, color, text } = req.body;
-  if (!author || !text) return res.status(400).json({ error: "Invalid post" });
-
-  forumPosts.push({
+  forum.push({
     id: Date.now(),
-    author,
-    color,
-    text,
-    timestamp: new Date().toISOString()
+    author: req.body.author,
+    color: req.body.color,
+    text: req.body.text
   });
-
   saveForum();
-  res.json({ success: true });
+  res.json({ ok: true });
 });
 
-/* =========================
-   INBOX (PRIVATE MAIL)
-========================= */
+/* =====================
+   INBOX
+===================== */
 
-app.get("/inbox", (req, res) => {
-  res.json(inboxMessages);
-});
+app.get("/inbox", (req, res) => res.json(inbox));
 
 app.post("/inbox/send", (req, res) => {
-  const { from, to, subject, body, color } = req.body;
-
-  if (!from || !to || !body) {
-    return res.status(400).json({ error: "Invalid message" });
-  }
-
-  inboxMessages.push({
+  inbox.push({
     id: Date.now(),
-    from,
-    to,
-    subject: subject || "(no subject)",
-    body,
-    color,
-    timestamp: new Date().toISOString()
+    from: req.body.from,
+    to: req.body.to,
+    subject: req.body.subject,
+    body: req.body.body,
+    color: req.body.color
   });
-
   saveInbox();
-  res.json({ success: true });
+  res.json({ ok: true });
 });
 
-/* =========================
-   LOGS (FALLOUT STYLE)
-========================= */
+/* =====================
+   LOGS
+===================== */
 
-app.get("/logs", (req, res) => {
-  res.json(logs);
-});
+app.get("/logs", (req, res) => res.json(logs));
 
 app.post("/logs", (req, res) => {
-  const { title, author, paragraphs, color } = req.body;
-
-  if (!title || !author || !Array.isArray(paragraphs)) {
-    return res.status(400).json({ error: "Invalid log format" });
-  }
-
   logs.push({
     id: Date.now(),
-    title,
-    author,
-    paragraphs,
-    color,
-    timestamp: new Date().toISOString()
+    title: req.body.title,
+    author: req.body.author,
+    paragraphs: req.body.paragraphs,
+    color: req.body.color
   });
-
   saveLogs();
-  res.json({ success: true });
+  res.json({ ok: true });
 });
 
-/* =========================
-   ADMIN CONTROLS
-========================= */
+/* =====================
+   ADMIN
+===================== */
 
 app.post("/admin/clear-forum", (req, res) => {
-  if (req.body.role !== "admin")
-    return res.status(403).json({ error: "Forbidden" });
-
-  forumPosts = [];
+  forum = [];
   saveForum();
-  res.json({ success: true });
+  res.json({ ok: true });
 });
 
 app.post("/admin/clear-inbox", (req, res) => {
-  if (req.body.role !== "admin")
-    return res.status(403).json({ error: "Forbidden" });
-
-  inboxMessages = [];
+  inbox = [];
   saveInbox();
-  res.json({ success: true });
+  res.json({ ok: true });
 });
 
 app.post("/admin/clear-logs", (req, res) => {
-  if (req.body.role !== "admin")
-    return res.status(403).json({ error: "Forbidden" });
-
   logs = [];
   saveLogs();
-  res.json({ success: true });
+  res.json({ ok: true });
 });
 
-/* =========================
-   START SERVER
-========================= */
+/* =====================
+   START
+===================== */
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`MAGITECH BB running on http://localhost:${PORT}`);
+app.listen(3000, () => {
+  console.log("MAGITECH BB running at http://localhost:3000");
 });
