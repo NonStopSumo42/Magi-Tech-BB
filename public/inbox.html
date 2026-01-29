@@ -1,52 +1,31 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title>MAGITECH BB – INBOX</title>
-<style>
-body { background:black; color:#3aff7a; font-family:monospace; }
-.msg { border-bottom:1px solid #144; padding:6px; }
-.blue{color:#2fd0ff;} .orange{color:#ff9a2f;}
-</style>
-</head>
-<body>
+<body style="background:black;color:#3aff7a;font-family:monospace">
 
-<h2>PRIVATE INBOX</h2>
-<div id="messages"></div>
+<h2>INBOX</h2>
+<div id="msgs"></div>
 
-<h3>Send Message</h3>
-<input id="to" placeholder="To"><br>
-<input id="subject" placeholder="Subject"><br>
-<textarea id="body"></textarea><br>
+<input id="to" placeholder="to">
+<input id="sub" placeholder="subject">
+<textarea id="body"></textarea>
 <button onclick="send()">Send</button>
 
 <script>
-const session = JSON.parse(localStorage.getItem("session"));
+const s=JSON.parse(localStorage.getItem("session"));
 
 function load(){
-  fetch("/inbox").then(r=>r.json()).then(data=>{
-    messages.innerHTML="";
-    data.forEach(m=>{
-      const d=document.createElement("div");
-      d.className="msg "+m.color;
-      d.innerHTML=`<b>${m.from}</b> → ${m.to}<br>${m.subject}<br>${m.body}`;
-      messages.appendChild(d);
-    });
+ fetch("/inbox").then(r=>r.json()).then(d=>{
+  msgs.innerHTML="";
+  d.forEach(m=>{
+   msgs.innerHTML+=`<div class="${m.color}">${m.from}: ${m.body}</div>`;
   });
+ });
 }
 
 function send(){
-  fetch("/inbox/send",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      from: session.username,
-      to: to.value,
-      subject: subject.value,
-      body: body.value,
-      color: session.color
-    })
-  }).then(()=>{ body.value=""; load(); });
+ fetch("/inbox/send",{method:"POST",headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({from:s.publicName||s.username,to:to.value,subject:sub.value,body:body.value,color:s.color})})
+ .then(load);
 }
 
 load();
