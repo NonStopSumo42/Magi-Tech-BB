@@ -1,18 +1,42 @@
 <!DOCTYPE html>
 <html>
-<body style="background:black;color:red;font-family:monospace">
+<head>
+<meta charset="UTF-8">
+<title>ADMIN TERMINAL</title>
+<style>
+body {
+  background:black;
+  color:#ff4d4d;
+  font-family:monospace;
+  text-shadow:0 0 6px rgba(255,77,77,.7);
+}
+.frame { border:2px solid #ff4d4d; padding:12px; margin:12px; }
+button {
+  width:100%; background:black; color:#ff4d4d;
+  border:2px solid #ff4d4d; margin-top:10px;
+}
+</style>
+</head>
+<body>
 
-<h2>ADMIN</h2>
-
-<button onclick="c('/admin/clear-forum')">Clear Forum</button>
-<button onclick="c('/admin/clear-inbox')">Clear Inbox</button>
-<button onclick="c('/admin/clear-logs')">Clear Logs</button>
+<div class="frame">
+  <h2>⚠ ADMIN CONTROL TERMINAL ⚠</h2>
+  <button onclick="call('/admin/clear-forum')">PURGE FORUM</button>
+  <button onclick="call('/admin/clear-inbox')">PURGE INBOX</button>
+  <button onclick="call('/admin/clear-logs')">PURGE LOGS</button>
+</div>
 
 <script>
-const s=JSON.parse(localStorage.getItem("session"));
-if(!s||s.role!=="admin"){alert("NO ACCESS");location="/";}
+const s = JSON.parse(localStorage.getItem("session"));
+if (!s || s.role !== "admin") {
+  alert("ACCESS DENIED");
+  location = "/";
+}
 
-function c(u){fetch(u,{method:"POST"}).then(()=>alert("DONE"));}
+function call(url) {
+  fetch(url,{method:"POST"}).then(()=>alert("OPERATION COMPLETE"));
+}
 </script>
+
 </body>
 </html>
