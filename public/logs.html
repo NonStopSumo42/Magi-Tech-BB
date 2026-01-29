@@ -1,54 +1,34 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title>MAGITECH BB – LOGS</title>
-<style>
-body { background:black; color:#3aff7a; font-family:monospace; }
-.log { border:1px solid #144; margin:8px; padding:8px; }
-.blue{color:#2fd0ff;} .orange{color:#ff9a2f;}
-</style>
-</head>
-<body>
+<body style="background:black;color:#3aff7a;font-family:monospace">
 
-<h2>TERMINAL LOGS</h2>
-<div id="logs"></div>
+<h2>LOGS</h2>
+<div id="out"></div>
 
-<h3>New Log</h3>
-<input id="title" placeholder="Title"><br>
-<input id="author" placeholder="Author"><br>
-<textarea id="text" placeholder="Paragraphs (blank line = new paragraph)"></textarea><br>
-<button onclick="create()">Create Log</button>
+<input id="t" placeholder="title">
+<input id="a" placeholder="author">
+<textarea id="txt"></textarea>
+<button onclick="add()">Add</button>
 
 <script>
-const session = JSON.parse(localStorage.getItem("session"));
+const s=JSON.parse(localStorage.getItem("session"));
 
 function load(){
-  fetch("/logs").then(r=>r.json()).then(data=>{
-    logs.innerHTML="";
-    data.forEach(l=>{
-      const d=document.createElement("div");
-      d.className="log "+l.color;
-      d.innerHTML=`<h3>${l.title}</h3><b>${l.author}</b><hr>`;
-      l.paragraphs.forEach(p=>{
-        d.innerHTML+=`<p>${p}</p>`;
-      });
-      logs.appendChild(d);
-    });
+ fetch("/logs").then(r=>r.json()).then(d=>{
+  out.innerHTML="";
+  d.forEach(l=>{
+   out.innerHTML+=`<div class="${l.color}">
+   <h3>${l.title}</h3><b>${l.author}</b>
+   ${l.paragraphs.map(p=>`<p>${p}</p>`).join("")}
+   </div>`;
   });
+ });
 }
 
-function create(){
-  fetch("/logs",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      title:title.value,
-      author:author.value,
-      paragraphs:text.value.split("\n\n"),
-      color: session.color
-    })
-  }).then(()=>{ text.value=""; load(); });
+function add(){
+ fetch("/logs",{method:"POST",headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({title:t.value,author:a.value,paragraphs:txt.value.split("\n\n"),color:s.color})})
+ .then(load);
 }
 
 load();
