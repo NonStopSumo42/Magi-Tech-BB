@@ -1,80 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
 <title>MAGITECH BB</title>
 <style>
-body { background:#0b1f14; color:#3aff7a; font-family:monospace; }
-.post { border-bottom:1px solid #144; padding:6px; }
-.green { color:#3aff7a; }
-.blue { color:#2fd0ff; }
-.orange { color:#ff9a2f; }
-input, textarea, button {
-  background:black; color:#3aff7a; border:1px solid #3aff7a;
-}
+body{background:#0b1f14;color:#3aff7a;font-family:monospace}
+.green{color:#3aff7a}.blue{color:#2fd0ff}.orange{color:#ff9a2f}
 </style>
 </head>
 <body>
 
 <h1>MAGITECH BB</h1>
-
 <div id="forum"></div>
 
-<h3>Post Anonymously</h3>
-<textarea id="anonText"></textarea><br>
-<button onclick="postAnon()">Post</button>
+<textarea id="anon"></textarea><br>
+<button onclick="postAnon()">Post Anon</button>
 
 <hr>
 
-<h3>Login</h3>
-<input id="user" placeholder="Username"><br>
-<input id="pass" type="password" placeholder="Password"><br>
+<input id="u" placeholder="user">
+<input id="p" type="password" placeholder="pass">
 <button onclick="login()">Login</button>
 
 <p>
-<a href="inbox.html">📨 INBOX</a> |
-<a href="logs.html">📜 LOGS</a> |
-<a href="admin.html">⚠ ADMIN</a>
+<a href="inbox.html">📨 Inbox</a> |
+<a href="logs.html">📜 Logs</a> |
+<a href="admin.html">⚠ Admin</a>
 </p>
 
 <script>
-let session = null;
-
-function loadForum(){
-  fetch("/forum").then(r=>r.json()).then(data=>{
+function load(){
+  fetch("/forum").then(r=>r.json()).then(d=>{
     forum.innerHTML="";
-    data.forEach(p=>{
-      const d=document.createElement("div");
-      d.className="post "+p.color;
-      d.textContent=`[${p.author}] ${p.text}`;
-      forum.appendChild(d);
+    d.forEach(p=>{
+      forum.innerHTML+=`<div class="${p.color}">[${p.author}] ${p.text}</div>`;
     });
   });
 }
 
 function postAnon(){
-  fetch("/forum/anon",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({text:anonText.value})
-  }).then(()=>{ anonText.value=""; loadForum(); });
+  fetch("/forum/anon",{method:"POST",headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({text:anon.value})}).then(load);
+  anon.value="";
 }
 
 function login(){
-  fetch("/login",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({username:user.value,password:pass.value})
-  })
-  .then(r=>r.json())
-  .then(d=>{
-    if(d.error){ alert(d.error); return; }
-    localStorage.setItem("session",JSON.stringify(d));
-    alert("Logged in as "+d.username);
+  fetch("/login",{method:"POST",headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({username:u.value,password:p.value})})
+  .then(r=>r.json()).then(d=>{
+    if(d.error) alert(d.error);
+    else localStorage.setItem("session",JSON.stringify(d));
   });
 }
 
-loadForum();
+load();
 </script>
 </body>
 </html>
