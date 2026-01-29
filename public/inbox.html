@@ -1,34 +1,72 @@
 <!DOCTYPE html>
 <html>
-<body style="background:black;color:#3aff7a;font-family:monospace">
+<head>
+<meta charset="UTF-8">
+<title>MAGITECH MAIL</title>
+<style>
+body {
+  background:#020a07;
+  color:#3aff7a;
+  font-family:monospace;
+  text-shadow:0 0 5px rgba(58,255,122,.7);
+}
+.frame { border:2px solid #3aff7a; padding:12px; margin:12px; }
+.msg { border-bottom:1px dashed #1f5; padding:6px 0; }
+.blue{color:#2fd0ff} .orange{color:#ff9a2f}
+input, textarea, button {
+  width:100%; background:black; color:#3aff7a;
+  border:2px solid #3aff7a; margin-top:6px;
+}
+</style>
+</head>
+<body>
 
-<h2>INBOX</h2>
-<div id="msgs"></div>
+<div class="frame">
+  <h2>PRIVATE MAIL TERMINAL</h2>
+  <div id="msgs"></div>
+</div>
 
-<input id="to" placeholder="to">
-<input id="sub" placeholder="subject">
-<textarea id="body"></textarea>
-<button onclick="send()">Send</button>
+<div class="frame">
+  <h3>SEND MESSAGE</h3>
+  <input id="to" placeholder="RECIPIENT">
+  <input id="subject" placeholder="SUBJECT">
+  <textarea id="body"></textarea>
+  <button onclick="send()">SEND</button>
+</div>
 
 <script>
-const s=JSON.parse(localStorage.getItem("session"));
+const s = JSON.parse(localStorage.getItem("session"));
 
-function load(){
- fetch("/inbox").then(r=>r.json()).then(d=>{
-  msgs.innerHTML="";
-  d.forEach(m=>{
-   msgs.innerHTML+=`<div class="${m.color}">${m.from}: ${m.body}</div>`;
+function load() {
+  fetch("/inbox").then(r=>r.json()).then(data=>{
+    msgs.innerHTML="";
+    data.forEach(m=>{
+      msgs.innerHTML+=
+        `<div class="msg ${m.color}">
+          <b>${m.from}</b> → ${m.to}<br>
+          <i>${m.subject}</i><br>
+          ${m.body}
+        </div>`;
+    });
   });
- });
 }
 
-function send(){
- fetch("/inbox/send",{method:"POST",headers:{'Content-Type':'application/json'},
- body:JSON.stringify({from:s.publicName||s.username,to:to.value,subject:sub.value,body:body.value,color:s.color})})
- .then(load);
+function send() {
+  fetch("/inbox/send",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      from: s.publicName || s.username,
+      to: to.value,
+      subject: subject.value,
+      body: body.value,
+      color: s.color
+    })
+  }).then(()=>{ body.value=""; load(); });
 }
 
 load();
 </script>
+
 </body>
 </html>
