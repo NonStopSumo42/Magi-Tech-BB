@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ADMIN TERMINAL</title>
+<style>
+body { background:black; color:red; font-family:monospace; }
+button { background:black; color:red; border:1px solid red; }
+</style>
+</head>
+<body>
+
+<h2>ADMIN CONTROL PANEL</h2>
+
+<button onclick="clearForum()">EMPTY FORUM</button><br><br>
+<button onclick="clearInbox()">EMPTY INBOX</button><br><br>
+<button onclick="clearLogs()">EMPTY LOGS</button>
+
+<script>
+const session = JSON.parse(localStorage.getItem("session"));
+if(!session || session.role!=="admin"){
+  alert("ACCESS DENIED");
+  location.href="/";
+}
+
+function call(url){
+  fetch(url,{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({role:"admin"})
+  }).then(()=>alert("DONE"));
+}
+
+const clearForum=()=>call("/admin/clear-forum");
+const clearInbox=()=>call("/admin/clear-inbox");
+const clearLogs=()=>call("/admin/clear-logs");
+</script>
+</body>
+</html>
