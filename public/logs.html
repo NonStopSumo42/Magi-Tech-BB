@@ -2,7 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>MAGITECH LOG ARCHIVE</title>
+<title>LOG ARCHIVE</title>
+
 <style>
 body {
   background:#020a07;
@@ -10,45 +11,58 @@ body {
   font-family:monospace;
   text-shadow:0 0 5px rgba(58,255,122,.7);
 }
-.frame { border:2px solid #3aff7a; margin:12px; padding:12px; }
-.log { border-bottom:1px dashed #1f5; margin-bottom:10px; }
-.blue{color:#2fd0ff} .orange{color:#ff9a2f}
+.frame {
+  border:2px solid #3aff7a;
+  margin:12px;
+  padding:12px;
+}
+.log {
+  border-bottom:1px dashed #1f5;
+  margin-bottom:10px;
+}
 input, textarea, button {
-  width:100%; background:black; color:#3aff7a;
-  border:2px solid #3aff7a; margin-top:6px;
+  width:100%;
+  background:black;
+  color:#3aff7a;
+  border:2px solid #3aff7a;
+  margin-top:6px;
 }
 </style>
 </head>
+
 <body>
 
 <div class="frame">
-  <h2>TERMINAL LOG ARCHIVE</h2>
+  <h2>SYSTEM LOGS</h2>
   <div id="out"></div>
 </div>
 
 <div class="frame">
-  <h3>CREATE LOG ENTRY</h3>
-  <input id="title" placeholder="LOG TITLE">
+  <h3>NEW LOG ENTRY</h3>
+  <input id="title" placeholder="TITLE">
   <input id="author" placeholder="AUTHOR">
   <textarea id="text" placeholder="BLANK LINE = NEW PARAGRAPH"></textarea>
-  <button onclick="add()">WRITE LOG</button>
+  <button onclick="add()">WRITE</button>
 </div>
 
 <script>
-const s = JSON.parse(localStorage.getItem("session"));
+const session = JSON.parse(localStorage.getItem("session"));
+if (!session) location = "/";
 
 function load() {
-  fetch("/logs").then(r=>r.json()).then(data=>{
-    out.innerHTML="";
-    data.forEach(l=>{
-      out.innerHTML += `
-        <div class="log ${l.color}">
-          <h3>${l.title}</h3>
-          <b>${l.author}</b>
-          ${l.paragraphs.map(p=>`<p>${p}</p>`).join("")}
-        </div>`;
+  fetch("/logs")
+    .then(r=>r.json())
+    .then(data=>{
+      out.innerHTML="";
+      data.forEach(l=>{
+        out.innerHTML += `
+          <div class="log">
+            <h3>${l.title}</h3>
+            <b>${l.author}</b>
+            ${l.paragraphs.map(p=>`<p>${p}</p>`).join("")}
+          </div>`;
+      });
     });
-  });
 }
 
 function add() {
@@ -58,8 +72,7 @@ function add() {
     body:JSON.stringify({
       title: title.value,
       author: author.value,
-      paragraphs: text.value.split("\n\n"),
-      color: s.color
+      paragraphs: text.value.split("\n\n")
     })
   }).then(()=>{ text.value=""; load(); });
 }
