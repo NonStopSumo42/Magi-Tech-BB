@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MAGITECH TERMINAL</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body {background:black; font-family:"Courier New", monospace; margin:0; padding:0;}
+.container {width:900px; margin:auto; padding:20px;}
+h2 {border-bottom:1px solid currentColor; padding-bottom:4px;}
+.forum-container {border:2px solid currentColor; background:#000; padding:10px; height:300px; overflow-y:scroll; margin-bottom:10px;}
+input, button, select {font-family:inherit; font-size:1rem; margin:4px 0; padding:6px; background:black; color:inherit; border:1px solid currentColor; cursor:pointer;}
+button {cursor:pointer;}
+.post {border-bottom:1px solid #333; margin-bottom:4px; padding-bottom:2px;}
+.username {font-weight:bold;}
+.nav-buttons {display:flex; gap:10px; margin-bottom:10px;}
+.logout-btn {margin-bottom:20px; padding:6px 12px; background:black; border:1px solid currentColor; cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<button class="logout-btn" onclick="logout()">LOGOUT</button>
+
+<h2>FORUM</h2>
+<div class="forum-container" id="forum"></div>
+
+<!-- Send as + Custom Name -->
+<select id="forumSendAs" onchange="toggleCustomForumName()"></select>
+<input id="customForumName" type="text" placeholder="ENTER CUSTOM NAME" style="display:none;">
+<input id="forumText" placeholder="POST TO FORUM">
+<button onclick="sendForum()">SEND</button>
+
+<div class="nav-buttons">
+  <button onclick="location.href='inbox.html'">INBOX</button>
+  <button onclick="location.href='logs.html'">LOGS</button>
+</div>
+
+<script>
+const secretNames=[
+  "Scientist Laura M. Hector",
+  "Dr. Sarah Laford",
+  "Scientist Gerard Balif",
+  "Director Benard H. Herald",
+  "Dr. Theodore Farlan"
+];
+
+const userId=sessionStorage.getItem("user");
+if(!userId) location.href="index.html";
+
+const isB=userId==="Pr0j3ctB";
+const user={
+  id:userId,
+  name:isB?"B":secretNames[Math.floor(Math.random()*secretNames.length)],
+  color:isB?"#00ffff":"#ff6a00" // neon blue / deep orange
+};
+
+document.querySelector(".container").style.color=user.color;
+
+// Populate "Send As" for secret account
+if(!isB){
+  const forumSelect=document.getElementById("forumSendAs");
+  const myOption=document.createElement("option");
+  myOption.value=user.name;
+  myOption.text=user.name+" (My current name)";
+  forumSelect.appendChild(myOption);
+  secretNames.forEach(n=>{
+    if(n!==user.name){
+      const o=document.createElement("option"); o.value=n; o.text=n;
+      forumSelect.appendChild(o);
+    }
+  });
+  const customOption=document.createElement("option");
+  customOption.value="__custom__"; customOption.text="Other / Custom Name";
+  forumSelect.appendChild(customOption);
+}
+
+// Show/hide custom input
+function toggleCustomForumName(){
+  const select=document.getElementById("forumSendAs");
+  const input=document.getElementById("customForumName");
+  input.style.display=select.value==="__custom__"?"block":"none";
+}
+
+// ---------- Forum functions ----------
+async function renderForum(){
+  const container=document.getElementById("forum");
+  const posts=await (await fetch("/api/forum")).json();
+  container.innerHTML="";
+  posts.slice().reverse().forEach(p=>{
+    const div=document.createElement("div");
+    div.className="post";
+    div.style.color=p.color;
+    div.innerHTML=`<span class="username">${p.name}</span>: ${p.text}`;
+    container.appendChild(div);
+  });
+}
+
+async function sendForum(){
+  const text=document.getElementById("forumText").value.trim();
+  if(!text) return;
+  let postName=user.name;
+  if(!isB){
+    const select=document.getElementById("forumSendAs");
+    if(select.value==="__custom__"){
+      const customName=document.getElementById("customForumName").value.trim();
+      if(!customName) return alert("Enter a custom name!");
+      postName=customName;
+    } else postName=select.value;
+  }
+  await fetch("/api/forum", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({name:postName,text,color:user.color})
+  });
+  document.getElementById("forumText").value="";
+  document.getElementById("customForumName").value="";
+  toggleCustomForumName();
+  renderForum();
+}
+
+renderForum();
+function logout(){ sessionStorage.clear(); location.href="index.html"; }
+</script>
+</div>
+</body>
+</html>

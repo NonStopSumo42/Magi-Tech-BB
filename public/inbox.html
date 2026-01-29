@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MAGITECH INBOX</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body {background:black; font-family:"Courier New", monospace; margin:0; padding:0;}
+.container {width:900px; margin:auto; padding:20px;}
+.mail {border-bottom:1px solid #333; padding:4px; margin-bottom:4px;}
+input, textarea, button, select {font-family:inherit; font-size:1rem; margin:4px 0; padding:6px; background:black; color:inherit; border:1px solid currentColor; cursor:pointer;}
+textarea {width:100%; height:80px;}
+.logout-btn {margin-bottom:20px; padding:6px 12px; background:black; border:1px solid currentColor; cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="container">
+<button class="logout-btn" onclick="logout()">LOGOUT</button>
+<h2>INBOX</h2>
+<div id="inbox"></div>
+
+<h3>SEND MESSAGE</h3>
+<select id="mailSendAs" onchange="toggleCustomMailName()"></select>
+<input id="customMailName" type="text" placeholder="ENTER CUSTOM NAME" style="display:none;">
+<textarea id="mailText" placeholder="WRITE MESSAGE"></textarea>
+<button onclick="sendMail()">SEND MAIL</button>
+<button onclick="location.href='terminal.html'">BACK TO TERMINAL</button>
+
+<script>
+const secretNames=["Scientist Laura M. Hector","Dr. Sarah Laford","Scientist Gerard Balif","Director Benard H. Herald","Dr. Theodore Farlan"];
+const userId=sessionStorage.getItem("user");
+if(!userId) location.href="index.html";
+const isB=userId==="Pr0j3ctB";
+const user={id:userId,name:isB?"B":secretNames[Math.floor(Math.random()*secretNames.length)],color:isB?"#00ffff":"#ff6a00"};
+document.querySelector(".container").style.color=user.color;
+
+// Populate Send As for secret account
+if(!isB){
+  const mailSelect=document.getElementById("mailSendAs");
+  const myOption=document.createElement("option"); myOption.value=user.name; myOption.text=user.name+" (My current name)"; mailSelect.appendChild(myOption);
+  secretNames.forEach(n=>{if(n!==user.name){const o=document.createElement("option"); o.value=n; o.text=n; mailSelect.appendChild(o);}});
+  const customOption=document.createElement("option"); customOption.value="__custom__"; customOption.text="Other / Custom Name"; mailSelect.appendChild(customOption);
+}
+
+// Show/hide custom input
+function toggleCustomMailName(){
+  const select=document.getElementById("mailSendAs");
+  const input=document.getElementById("customMailName");
+  input.style.display=select.value==="__custom__"?"block":"none";
+}
+
+// ---------- Inbox functions ----------
+async function renderInbox(){
+  const box=document.getElementById("inbox");
+  const mail=await (await fetch(`/api/mail/${user.id}`)).json();
+  box.innerHTML="";
+  mail.forEach(m=>{
+    const div=document.createElement("div");
+    div.className="mail"; div.style.color=m.color;
+    div.innerHTML=`<b>From: ${m.from}</b><br>${m.text}`;
+    box.appendChild(div);
+  });
+}
+
+async function sendMail(){
+  const text=document.getElementById("mailText").value.trim();
+  if(!text) return;
+  let fromName=user.name;
+  if(!isB){
+    const select=document.getElementById("mailSendAs");
+    if(select.value==="__custom__"){
+      const customName=document.getElementById("customMailName").value.trim();
+      if(!customName) return alert("Enter a custom name!");
+      fromName=customName;
+    } else fromName=select.value;
+  }
+  await fetch("/api/mail", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({from:fromName,to:isB?"Pr0j3ctA":"Pr0j3ctB",text,color:user.color})
+  });
+  document.getElementById("mailText").value="";
+  document.getElementById("customMailName").value="";
+  toggleCustomMailName();
+  renderInbox();
+}
+
+renderInbox();
+function logout(){ sessionStorage.clear(); location.href="index.html"; }
+</script>
+</div>
+</body>
+</html>

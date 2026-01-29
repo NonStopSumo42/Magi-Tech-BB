@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MAGITECH LOGS</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body {background:black; font-family:"Courier New", monospace; margin:0; padding:0;}
+.container {width:900px; margin:auto; padding:20px;}
+.log-entry {border-bottom:1px solid #333; padding:4px; margin-bottom:4px;}
+input, textarea, button {font-family:inherit; font-size:1rem; margin:4px 0; padding:6px; background:black; color:inherit; border:1px solid currentColor; cursor:pointer;}
+textarea {width:100%; height:80px;}
+.logout-btn {margin-bottom:20px; padding:6px 12px; background:black; border:1px solid currentColor; cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<button class="logout-btn" onclick="logout()">LOGOUT</button>
+<h2>LOGS</h2>
+<div id="logs"></div>
+
+<h3>CREATE LOG</h3>
+<input id="logTitle" placeholder="TITLE">
+<input id="logAuthor" placeholder="AUTHOR">
+<textarea id="logText" placeholder="LOG TEXT"></textarea>
+<button onclick="createLog()">CREATE LOG</button>
+<button onclick="location.href='terminal.html'">BACK TO TERMINAL</button>
+
+<script>
+const secretNames=["Scientist Laura M. Hector","Dr. Sarah Laford","Scientist Gerard Balif","Director Benard H. Herald","Dr. Theodore Farlan"];
+const userId=sessionStorage.getItem("user");
+if(!userId) location.href="index.html";
+const isB=userId==="Pr0j3ctB";
+const user={id:userId,name:isB?"B":secretNames[Math.floor(Math.random()*secretNames.length)],color:isB?"#00ffff":"#ff6a00"};
+document.querySelector(".container").style.color=user.color;
+
+// ---------- Logs functions ----------
+async function renderLogs(){
+  const box=document.getElementById("logs");
+  const logs=await (await fetch("/api/logs")).json();
+  box.innerHTML="";
+  logs.slice().reverse().forEach(l=>{
+    const div=document.createElement("div");
+    div.className="log-entry"; div.style.color=l.color;
+    div.innerHTML=`<b>Title:</b> ${l.title}<br><b>Author:</b> ${l.author}<br><pre>${l.text}</pre>`;
+    box.appendChild(div);
+  });
+}
+
+async function createLog(){
+  const title=document.getElementById("logTitle").value.trim();
+  const author=document.getElementById("logAuthor").value.trim();
+  const text=document.getElementById("logText").value.trim();
+  if(!title||!author||!text) return alert("All log fields are required!");
+  await fetch("/api/logs", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({title,author,text,color:user.color})
+  });
+  document.getElementById("logTitle").value="";
+  document.getElementById("logAuthor").value="";
+  document.getElementById("logText").value="";
+  renderLogs();
+}
+
+renderLogs();
+function logout(){ sessionStorage.clear(); location.href="index.html"; }
+</script>
+
+</div>
+</body>
+</html>

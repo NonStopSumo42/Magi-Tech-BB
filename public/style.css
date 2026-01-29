@@ -1,0 +1,86 @@
+:root {
+  --emerald: #2fa36b;
+  --emerald-dim: #1f6f4a;
+
+  --neon-blue: #1aa3ff;
+  --neon-blue-dim: #0b4f7a;
+
+  --deep-orange: #ff7a18;
+  --deep-orange-dim: #8a3f0b;
+}
+
+body {
+  background: black;
+  font-family: "Courier New", monospace;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+.title-box {
+  border: 2px solid var(--emerald);
+  padding: 20px;
+  font-size: 2.2rem;
+  text-align: center;
+  letter-spacing: 0.3em;
+  color: var(--emerald);
+}
+
+.forum-container {
+  height: 400px;
+  overflow-y: scroll;
+  border: 2px solid var(--emerald-dim);
+  padding: 10px;
+  margin-top: 20px;
+  color: var(--emerald);
+}
+
+.post {
+  border-bottom: 1px solid var(--emerald-dim);
+  padding: 6px 0;
+}
+
+.username {
+  font-weight: bold;
+}
+
+.login-box {
+  margin-top: 20px;
+  border: 2px solid var(--emerald-dim);
+  padding: 10px;
+}
+
+input, button {
+  background: black;
+  color: var(--emerald);
+  border: 1px solid var(--emerald-dim);
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Terminal modes */
+.real-ui {
+  color: var(--neon-blue);
+}
+
+.secret-ui {
+  color: var(--deep-orange);
+}
+.post-box {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.post-box input {
+  flex: 1;
+  padding: 6px;
+}
