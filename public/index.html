@@ -1,109 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>MAGITECH BB</title>
-<link rel="stylesheet" href="style.css">
 <style>
-body {background:black; font-family:"Courier New", monospace; margin:0; padding:0;}
-.container {width:900px; margin:auto; padding:20px; color:#2fa36b;}
-.title-box {border:2px solid #2fa36b; padding:20px; font-size:2.2rem; text-align:center; letter-spacing:0.3em; margin-bottom:20px;}
-.forum-container {height:300px; overflow-y:scroll; border:2px solid #1f6f4a; padding:10px; margin-bottom:10px; color:#2fa36b; background:black;}
-.post {border-bottom:1px solid #1f6f4a; padding:6px 0;}
-.username {font-weight:bold;}
-.post-box, .login-box {margin-top:10px; padding:10px; border:2px solid #1f6f4a; display:flex; flex-direction:column; gap:6px; background:#000;}
-.post-box input, .login-box input {padding:6px; font-family:inherit; font-size:1rem; color:#2fa36b; background:black; border:1px solid #1f6f4a;}
-.post-box button, .login-box button {padding:6px; font-family:inherit; font-size:1rem; color:#2fa36b; background:black; border:1px solid #1f6f4a; cursor:pointer;}
-.post-box button:hover, .login-box button:hover {box-shadow:0 0 5px #2fa36b;}
+body { background:#0b1f14; color:#3aff7a; font-family:monospace; }
+.post { border-bottom:1px solid #144; padding:6px; }
+.green { color:#3aff7a; }
+.blue { color:#2fd0ff; }
+.orange { color:#ff9a2f; }
+input, textarea, button {
+  background:black; color:#3aff7a; border:1px solid #3aff7a;
+}
 </style>
 </head>
 <body>
-<div class="container">
 
-  <div class="title-box">MAGITECH BB</div>
+<h1>MAGITECH BB</h1>
 
-  <!-- Forum -->
-  <div class="forum-container" id="forum"></div>
-  <div class="post-box">
-    <input id="anonText" type="text" placeholder="ENTER MESSAGE" autocomplete="off">
-    <button onclick="postAnon()">POST</button>
-  </div>
+<div id="forum"></div>
 
-  <!-- Login -->
-  <div class="login-box">
-    <h3>TERMINAL LOGIN</h3>
-    <input id="username" type="text" placeholder="USERNAME (Pr0j3ctB / Pr0j3ctA)" autocomplete="off">
-    <input id="password" type="password" placeholder="PASSWORD">
-    <button onclick="login()">ENTER</button>
-  </div>
+<h3>Post Anonymously</h3>
+<textarea id="anonText"></textarea><br>
+<button onclick="postAnon()">Post</button>
 
-</div>
+<hr>
+
+<h3>Login</h3>
+<input id="user" placeholder="Username"><br>
+<input id="pass" type="password" placeholder="Password"><br>
+<button onclick="login()">Login</button>
+
+<p>
+<a href="inbox.html">📨 INBOX</a> |
+<a href="logs.html">📜 LOGS</a> |
+<a href="admin.html">⚠ ADMIN</a>
+</p>
 
 <script>
-  // ---------- Forum ----------
-  async function renderForum() {
-    const container = document.getElementById("forum");
-    try {
-      const posts = await (await fetch("/api/forum")).json();
-      container.innerHTML = "";
-      posts.slice().reverse().forEach(p => {
-        const div = document.createElement("div");
-        div.className = "post";
-        div.style.color = p.color;
-        div.innerHTML = `<span class="username">${p.name}</span>: ${p.text}`;
-        container.appendChild(div);
-      });
-    } catch(e){
-      console.error("Failed to fetch forum posts", e);
-    }
-  }
+let session = null;
 
-  async function postAnon() {
-    const text = document.getElementById("anonText").value.trim();
-    if (!text) return;
+function loadForum(){
+  fetch("/forum").then(r=>r.json()).then(data=>{
+    forum.innerHTML="";
+    data.forEach(p=>{
+      const d=document.createElement("div");
+      d.className="post "+p.color;
+      d.textContent=`[${p.author}] ${p.text}`;
+      forum.appendChild(d);
+    });
+  });
+}
 
-    try {
-      const res = await fetch("/api/forum", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({name:"member_unknown", text, color:"#2fa36b"})
-      });
-      if(res.ok){
-        document.getElementById("anonText").value = "";  // clear input only on success
-        renderForum(); // refresh forum
-      } else {
-        alert("Failed to post message");
-      }
-    } catch(err){
-      console.error(err);
-      alert("Server error while posting message");
-    }
-  }
+function postAnon(){
+  fetch("/forum/anon",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text:anonText.value})
+  }).then(()=>{ anonText.value=""; loadForum(); });
+}
 
-  renderForum();
+function login(){
+  fetch("/login",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:user.value,password:pass.value})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.error){ alert(d.error); return; }
+    localStorage.setItem("session",JSON.stringify(d));
+    alert("Logged in as "+d.username);
+  });
+}
 
-  // ---------- Server-side login ----------
-  async function login() {
-    const user = document.getElementById("username").value.trim();
-    const pass = document.getElementById("password").value.trim();
-    if(!user||!pass) return alert("Enter username and password!");
-    try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({user, pass})
-      });
-      if(res.ok){
-        sessionStorage.setItem("user", user);
-        location.href="terminal.html";
-      } else {
-        alert("INVALID CREDENTIALS. Use Pr0j3ctB or Pr0j3ctA as username.");
-      }
-    } catch(e) {
-      alert("Server error, cannot login");
-      console.error(e);
-    }
-  }
+loadForum();
 </script>
 </body>
 </html>
