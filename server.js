@@ -1,32 +1,9 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
-
 const app = express();
+const DATA = require("./data");
+
 app.use(express.json());
-app.use(express.static("public")); // 🔴 THIS FIXES Cannot GET /
-
-/* =====================
-   DATA FILES
-===================== */
-
-const DATA_DIR = path.join(__dirname, "data");
-const FORUM_FILE = path.join(DATA_DIR, "forum.json");
-const INBOX_FILE = path.join(DATA_DIR, "inbox.json");
-const LOGS_FILE = path.join(DATA_DIR, "logs.json");
-
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-for (const f of [FORUM_FILE, INBOX_FILE, LOGS_FILE]) {
-  if (!fs.existsSync(f)) fs.writeFileSync(f, "[]");
-}
-
-let forum = JSON.parse(fs.readFileSync(FORUM_FILE));
-let inbox = JSON.parse(fs.readFileSync(INBOX_FILE));
-let logs = JSON.parse(fs.readFileSync(LOGS_FILE));
-
-const saveForum = () => fs.writeFileSync(FORUM_FILE, JSON.stringify(forum, null, 2));
-const saveInbox = () => fs.writeFileSync(INBOX_FILE, JSON.stringify(inbox, null, 2));
-const saveLogs = () => fs.writeFileSync(LOGS_FILE, JSON.stringify(logs, null, 2));
+app.use(express.static("public"));
 
 /* =====================
    USERS
@@ -66,37 +43,56 @@ const USERS = {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   const user = USERS[username];
+
   if (!user || user.password !== password) {
     return res.status(401).json({ error: "Invalid credentials" });
   }
-  res.json(user);
+
+  res.json({
+    username,
+    role: user.role,
+    color: user.color,
+    publicName: user.publicName || null,
+    publicNames: user.publicNames || null
+  });
 });
 
 /* =====================
    FORUM
 ===================== */
 
-app.get("/forum", (req, res) => res.json(forum));
+app.get("/forum", (req, res) => {
+  res.json(DATA.forum);
+});
 
 app.post("/forum/anon", (req, res) => {
-  forum.push({
+  if (!req.body.text) {
+    return res.status(400).json({ error: "Empty post" });
+  }
+
+  DATA.forum.push({
     id: Date.now(),
     author: "member_unknown",
     color: "green",
     text: req.body.text
   });
-  saveForum();
+
   res.json({ ok: true });
 });
 
 app.post("/forum/auth", (req, res) => {
-  forum.push({
+  const { author, color, text } = req.body;
+  if (!author || !text) {
+    return res.status(400).json({ error: "Invalid post" });
+  }
+
+  DATA.forum.push({
     id: Date.now(),
-    author: req.body.author,
-    color: req.body.color,
-    text: req.body.text
+    author,
+    color,
+    text
   });
-  saveForum();
+
   res.json({ ok: true });
 });
 
@@ -104,63 +100,76 @@ app.post("/forum/auth", (req, res) => {
    INBOX
 ===================== */
 
-app.get("/inbox", (req, res) => res.json(inbox));
+app.get("/inbox", (req, res) => {
+  res.json(DATA.inbox);
+});
 
 app.post("/inbox/send", (req, res) => {
-  inbox.push({
+  const { from, to, subject, body, color } = req.body;
+
+  if (!from || !to || !body) {
+    return res.status(400).json({ error: "Invalid message" });
+  }
+
+  DATA.inbox.push({
     id: Date.now(),
-    from: req.body.from,
-    to: req.body.to,
-    subject: req.body.subject,
-    body: req.body.body,
-    color: req.body.color
+    from,
+    to,
+    subject: subject || "(no subject)",
+    body,
+    color
   });
-  saveInbox();
+
   res.json({ ok: true });
 });
 
 /* =====================
-   LOGS
+   LOGS (PARAGRAPHED)
 ===================== */
 
-app.get("/logs", (req, res) => res.json(logs));
+app.get("/logs", (req, res) => {
+  res.json(DATA.logs);
+});
 
 app.post("/logs", (req, res) => {
-  logs.push({
+  const { title, author, paragraphs, color } = req.body;
+
+  if (!title || !author || !Array.isArray(paragraphs)) {
+    return res.status(400).json({ error: "Invalid log format" });
+  }
+
+  DATA.logs.push({
     id: Date.now(),
-    title: req.body.title,
-    author: req.body.author,
-    paragraphs: req.body.paragraphs,
-    color: req.body.color
+    title,
+    author,
+    paragraphs,
+    color
   });
-  saveLogs();
+
   res.json({ ok: true });
 });
 
 /* =====================
-   ADMIN
+   ADMIN CONTROLS
 ===================== */
 
 app.post("/admin/clear-forum", (req, res) => {
-  forum = [];
-  saveForum();
+  DATA.forum.length = 0;
   res.json({ ok: true });
 });
 
 app.post("/admin/clear-inbox", (req, res) => {
-  inbox = [];
-  saveInbox();
+  DATA.inbox.length = 0;
   res.json({ ok: true });
 });
 
 app.post("/admin/clear-logs", (req, res) => {
-  logs = [];
-  saveLogs();
+  DATA.logs.length = 0;
   res.json({ ok: true });
 });
 
 /* =====================
-   START
+   START SERVER
 ===================== */
 
 app.listen(3000, () => {
